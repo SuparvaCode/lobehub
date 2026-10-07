@@ -4,6 +4,8 @@ import { memo, useEffect, useState } from 'react';
 
 interface ExecutionTimeProps {
   isExecuting: boolean;
+  /** Owning message identity; native tool ids may repeat across runs. */
+  messageId: string;
   startTime?: number;
   timerKey: string;
 }
@@ -41,42 +43,59 @@ const formatElapsedTime = (ms: number): string => {
   return formatDuration(ms);
 };
 
-const ExecutionTime = memo<ExecutionTimeProps>(({ isExecuting, startTime, timerKey }) => {
-  const [elapsed, setElapsed] = useState(0);
+/**
+ * Displays elapsed tool time with a cache isolated to its owning message.
+ *
+ * Use when:
+ * - A running tool can unmount while switching conversations.
+ *
+ * Expects:
+ * - A unique message id and a tool id scoped to that message.
+ *
+ * Returns:
+ * - The elapsed time while executing, preserving that message's remount clock.
+ */
+const ExecutionTime = memo<ExecutionTimeProps>(
+  ({ isExecuting, messageId, startTime, timerKey: toolCallId }) => {
+    // Native Codex item ids repeat across topics and resumed turns. Include the
+    // persistent message identity so one run cannot read or clear another clock.
+    const timerKey = JSON.stringify([messageId, toolCallId]);
+    const [elapsed, setElapsed] = useState(0);
 
-  useEffect(() => {
-    if (!isExecuting) {
+    useEffect(() => {
+      if (!isExecuting) {
+        clearExecutionStartTimeCleanup(timerKey);
+        executionStartTimeCache.delete(timerKey);
+        setElapsed(0);
+        return;
+      }
+
       clearExecutionStartTimeCleanup(timerKey);
-      executionStartTimeCache.delete(timerKey);
-      setElapsed(0);
-      return;
-    }
 
-    clearExecutionStartTimeCleanup(timerKey);
+      const resolvedStartTime = startTime ?? executionStartTimeCache.get(timerKey) ?? Date.now();
+      executionStartTimeCache.set(timerKey, resolvedStartTime);
 
-    const resolvedStartTime = startTime ?? executionStartTimeCache.get(timerKey) ?? Date.now();
-    executionStartTimeCache.set(timerKey, resolvedStartTime);
+      const update = () => {
+        setElapsed(Math.max(0, Date.now() - resolvedStartTime));
+      };
 
-    const update = () => {
-      setElapsed(Math.max(0, Date.now() - resolvedStartTime));
-    };
+      update();
+      const interval = window.setInterval(update, UPDATE_INTERVAL_MS);
 
-    update();
-    const interval = window.setInterval(update, UPDATE_INTERVAL_MS);
+      return () => {
+        window.clearInterval(interval);
+        scheduleExecutionStartTimeCleanup(timerKey);
+      };
+    }, [isExecuting, startTime, timerKey]);
 
-    return () => {
-      window.clearInterval(interval);
-      scheduleExecutionStartTimeCleanup(timerKey);
-    };
-  }, [isExecuting, startTime, timerKey]);
+    if (!isExecuting) return null;
 
-  if (!isExecuting) return null;
-
-  return (
-    <Text fontSize={12} style={{ flexShrink: 0, whiteSpace: 'nowrap' }} type="secondary">
-      {formatElapsedTime(elapsed)}
-    </Text>
-  );
-});
+    return (
+      <Text fontSize={12} style={{ flexShrink: 0, whiteSpace: 'nowrap' }} type="secondary">
+        {formatElapsedTime(elapsed)}
+      </Text>
+    );
+  },
+);
 
 export default ExecutionTime;

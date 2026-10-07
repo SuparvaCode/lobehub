@@ -37,6 +37,8 @@ interface InspectorProps {
    * Whether the tool is currently executing (from operation state)
    */
   isToolCalling?: boolean;
+  /** Message owning this tool, used to isolate execution state. */
+  messageId: string;
   result?: { content: string | null; error?: any; state?: any };
   toolCallId: string;
   toolCallStartTime?: number;
@@ -45,6 +47,7 @@ interface InspectorProps {
 const Inspectors = memo<InspectorProps>(
   ({
     identifier,
+    messageId,
     apiName,
     arguments: argsStr,
     result,
@@ -155,6 +158,7 @@ const Inspectors = memo<InspectorProps>(
         )}
         <ExecutionTime
           isExecuting={showExecutionTimer}
+          messageId={messageId}
           startTime={toolCallStartTime}
           timerKey={toolCallId}
         />
