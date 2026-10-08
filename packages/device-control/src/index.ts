@@ -2,6 +2,7 @@ export { getCodexQuota, type GetCodexQuotaParams } from './codexQuota';
 export {
   APP_UPDATE_UNSUPPORTED_MESSAGE,
   DEVICE_RPC_METHODS,
+  deviceRpcClients,
   type DeviceRpcMethod,
   executeDeviceRpc,
   TRASH_UNSUPPORTED_MESSAGE,

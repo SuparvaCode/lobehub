@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   APP_UPDATE_UNSUPPORTED_MESSAGE,
   DEVICE_RPC_METHODS,
+  deviceRpcClients,
   executeDeviceRpc,
   TRASH_UNSUPPORTED_MESSAGE,
 } from '../dispatch';
@@ -590,5 +591,28 @@ describe('executeDeviceRpc', () => {
       makeDeps(),
     )) as { success: boolean };
     expect(result.success).toBe(false);
+  });
+});
+
+describe('deviceRpcClients', () => {
+  it('marks the methods the CLI rejects as desktop-only', () => {
+    for (const method of [
+      'trashLocalFiles',
+      'getAppUpdateState',
+      'checkAppUpdate',
+      'installAppUpdate',
+    ])
+      expect(deviceRpcClients(method)).toEqual(['desktop']);
+  });
+
+  it('lets any client serve the other methods', () => {
+    const shared = DEVICE_RPC_METHODS.filter(
+      (method) =>
+        !['trashLocalFiles', 'getAppUpdateState', 'checkAppUpdate', 'installAppUpdate'].includes(
+          method,
+        ),
+    );
+    for (const method of shared) expect(deviceRpcClients(method)).toBeUndefined();
+    expect(deviceRpcClients('unknownMethod')).toBeUndefined();
   });
 });
