@@ -4844,6 +4844,7 @@ describe('HeterogeneousAgentCtr', () => {
       );
     });
 
+    /** @example Ancestor images reach the CLI fallback while successful resume stays current-turn only. */
     it('encodes primary and resume fallback contexts for the embedded CLI', async () => {
       const proc = createGatewayCliProc();
       nextFakeProc = proc;
@@ -4854,6 +4855,7 @@ describe('HeterogeneousAgentCtr', () => {
 
       const ack = ctr.spawnLhHeteroExec({
         ...params,
+        resumeFallbackImageList: [{ id: 'old-image', url: 'https://example.test/red.png' }],
         resumeFallbackSystemContext: 'workspace rules\n\nprevious conversation',
         resumeSessionId: 'session-1',
         systemContext: 'workspace rules',
@@ -4873,6 +4875,10 @@ describe('HeterogeneousAgentCtr', () => {
             // seen the introduction the first turn delivered.
             cliGuideBlock,
             { text: 'inspect the repository', type: 'text' },
+            {
+              source: { id: 'old-image', type: 'url', url: 'https://example.test/red.png' },
+              type: 'image',
+            },
           ],
         }),
       );
