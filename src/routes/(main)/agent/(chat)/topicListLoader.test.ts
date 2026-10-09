@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  agentChatTopicListLoader,
-  PRE_PAINT_HYDRATE_TIMEOUT,
-  preHydrateTopicListForRoute,
-} from './topicListLoader';
+import { PRE_PAINT_HYDRATE_TIMEOUT } from '@/libs/replica/prePaint';
+
+import { agentChatTopicListLoader, preHydrateTopicListForRoute } from './topicListLoader';
 
 const preHydrateTopicListMock = vi.hoisted(() => vi.fn(async () => true));
 const getSidebarTopicListParamsMock = vi.hoisted(() => vi.fn());
