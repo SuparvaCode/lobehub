@@ -13,7 +13,7 @@ import { userProfileSelectors } from '@/store/user/selectors';
 import { useAgentMeta } from '../../hooks';
 import ContentBlock from '../AssistantGroup/components/ContentBlock';
 import UserMessageContent from '../User/components/MessageContent';
-import { getBotSender, resolveSenderIdentity } from '../User/resolveSenderIdentity';
+import { resolveSenderIdentity } from '../User/resolveSenderIdentity';
 
 interface CompressedMessageItemProps {
   message: UIChatMessage;
@@ -33,10 +33,13 @@ const CompressedMessageItem = memo<CompressedMessageItemProps>(({ message }) => 
   // Render user message
   if (role === 'user') {
     // A shared (workspace) topic's compressed history may hold messages from
-    // other members — render the sender's identity, not the viewer's.
+    // other members — render the sender's identity, not the viewer's. The
+    // resolver reads the server-written blocks off the row itself, so this path
+    // cannot drop one of them (an agent → agent turn used to revert to the human
+    // owner here).
     const { avatar, title } = resolveSenderIdentity({
-      botSender: getBotSender(message),
       currentUserId,
+      message,
       selfAvatar: userAvatar,
       sender,
       unknownLabel: t('sender.unknownMember'),
