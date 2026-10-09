@@ -179,6 +179,7 @@ const TopicChatDrawer = memo(() => {
   const runTask = useTaskStore((s) => s.runTask);
   const topicId = useTaskStore(taskDetailSelectors.activeTopicDrawerTopicId);
   const activeTaskId = useTaskStore((s) => s.activeTaskId);
+  const activeTaskDatabaseId = useTaskStore(taskDetailSelectors.activeTaskDatabaseId);
   const agentId = useTaskStore(taskDetailSelectors.topicDrawerAgentId);
   const drawerTitle = useTaskStore(taskDetailSelectors.topicDrawerTitle);
   const activity = useTaskStore(taskActivitySelectors.activeDrawerTopicActivity);
@@ -210,6 +211,8 @@ const TopicChatDrawer = memo(() => {
     !!activeTaskId &&
     !!topicId &&
     activity?.id === topicId &&
+    // Direct Topics omit sourceTaskId; descendant activities retain their owner.
+    (!activity.sourceTaskId || activity.sourceTaskId === activeTaskDatabaseId) &&
     !!activity.status &&
     activity.status !== 'running' &&
     !activity.runningOperation &&

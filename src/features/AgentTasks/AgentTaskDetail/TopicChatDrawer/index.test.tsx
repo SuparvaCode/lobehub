@@ -58,6 +58,7 @@ const mocks = vi.hoisted(() => ({
           },
         ] as TaskDetailActivity[],
         agentId: 'agt_assignee',
+        id: 'task-parent',
         identifier: 'T-1',
         instruction: 'Do the task',
         status: 'completed',
@@ -374,6 +375,36 @@ describe('TopicChatDrawer', () => {
     const view = render(<TopicChatDrawer />);
     /** @example Continue uses the same eligibility selector as the Task Run action. */
     expect(view.getByRole('button', { name: 'taskDetail.topicMenu.continueTask' })).toBeDisabled();
+  });
+
+  // ROOT CAUSE:
+  // Parent activities include descendant Topics. Matching the assignee alone
+  // let the parent continuation run its prompt inside a child's conversation.
+  /** @example A same-assignee descendant Topic cannot continue the parent Task. */
+  it('does not continue a descendant Topic sharing the active Task assignee', () => {
+    mocks.taskState.taskDetailMap['T-1'].activities[0].sourceTaskId = 'task-child';
+    const view = render(<TopicChatDrawer />);
+    const button = view.getByRole('button', { name: 'taskDetail.topicMenu.continueTask' });
+    /** @example The invalid continuation is disabled before any click. */
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    /** @example The parent task ID is never sent with the child Topic ID. */
+    expect(mocks.taskState.runTask).not.toHaveBeenCalled();
+  });
+
+  /** @example Populated ownership compares the canonical ID, not the T-1 route identifier. */
+  it('allows an own Topic carrying the canonical Task ID', async () => {
+    mocks.taskState.taskDetailMap['T-1'].activities[0].sourceTaskId = 'task-parent';
+    const view = render(<TopicChatDrawer />);
+    fireEvent.click(view.getByRole('button', { name: 'taskDetail.topicMenu.continueTask' }));
+    /** @example Existing own-topic continuation still reaches the Task runner. */
+    await waitFor(() =>
+      expect(mocks.taskState.runTask).toHaveBeenCalledWith(
+        'T-1',
+        { continueTopicId: 'topic-1' },
+        { throwOnError: true },
+      ),
+    );
   });
 
   /** @example A descendant or reassigned Agent cannot resume the old assignee Topic. */
