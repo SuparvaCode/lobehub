@@ -22,6 +22,8 @@ export interface SpawnHeteroAgentRunParams {
   jwt: string;
   operationId: string;
   prompt: string;
+  /** Complete image inputs used only when native resume falls back to a fresh session. */
+  resumeFallbackImageList?: HeteroExecImageRef[];
   /** System context used only by the automatic retry without native resume. */
   resumeFallbackSystemContext?: string;
   resumeSessionId?: string;
@@ -70,6 +72,7 @@ export function spawnHeteroAgentRun(
     jwt,
     operationId,
     prompt,
+    resumeFallbackImageList,
     resumeFallbackSystemContext,
     resumeSessionId,
     serverUrl,
@@ -113,6 +116,7 @@ export function spawnHeteroAgentRun(
     imageList,
     isNewSession: !resumeSessionId,
     prompt,
+    resumeFallbackImageList,
     resumeFallbackSystemContext,
     systemContext,
   });
